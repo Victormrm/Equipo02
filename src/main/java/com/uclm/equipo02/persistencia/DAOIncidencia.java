@@ -16,9 +16,8 @@ import org.bson.BsonString;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
-import com.uclm.equipo02.modelo.Fichaje;
-import com.uclm.equipo02.modelo.Incidencia;
-import com.uclm.equipo02.modelo.Usuario;
+
+import com.uclm.equipo02.modelo.Modelo;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -51,7 +50,7 @@ public class DAOIncidencia{
 
 	}
 
-	public void insert(Incidencia incidencia) {
+	public void insert(Modelo incidencia) {
 		Document documento = new Document();
 
 		documento.append("nombreUsuario", incidencia.getNombreUsuario());
@@ -115,8 +114,8 @@ public class DAOIncidencia{
 	}
 
 
-	public Incidencia buscarIncidenciaID(ObjectId id) {
-		Incidencia inci=new Incidencia();
+	public Modelo buscarIncidenciaID(ObjectId id) {
+		Modelo inci=new Modelo();
 
 		Document documento = new Document();
 		MongoCursor<Document> elementos = getIncidencias().find().iterator();
@@ -129,7 +128,7 @@ public class DAOIncidencia{
 				inci.setDniUsuario(documento.get("dniUsuario").toString());
 				inci.setCategoria(documento.get("categoria").toString());
 				inci.setDescripcion(documento.get("descripcion").toString());
-				inci.setEstado(documento.get("estado").toString());
+				inci.setEstadoIncidencia(documento.get("estado").toString());
 				inci.setFechaCreacion(documento.get("fechaCreacion").toString());
 				inci.setComentarioGestor(documento.get("comentarioGestor").toString());
 			}
@@ -139,8 +138,8 @@ public class DAOIncidencia{
 		return inci;
 	}
 
-	public Incidencia resolverIncidencia(ObjectId id,String textoGestor) {
-		Incidencia inci=new Incidencia();
+	public Modelo resolverIncidencia(ObjectId id,String textoGestor) {
+		Modelo inci=new Modelo();
 
 		Document documento = new Document();
 		MongoCursor<Document> elementos = getIncidencias().find().iterator();
@@ -153,7 +152,7 @@ public class DAOIncidencia{
 				inci.setDniUsuario(documento.get("dniUsuario").toString());
 				inci.setCategoria(documento.get("categoria").toString());
 				inci.setDescripcion(documento.get("descripcion").toString());
-				inci.setEstado("Resuelta");
+				inci.setEstadoIncidencia("Resuelta");
 				inci.setFechaCreacion(documento.get("fechaCreacion").toString());
 				inci.setComentarioGestor(textoGestor);
 			}
@@ -163,8 +162,8 @@ public class DAOIncidencia{
 		return inci;
 	}
 
-	public Incidencia denegarIncidencia(ObjectId id,String textoGestor) {
-		Incidencia inci=new Incidencia();
+	public Modelo denegarIncidencia(ObjectId id,String textoGestor) {
+		Modelo inci=new Modelo();
 
 		Document documento = new Document();
 		MongoCursor<Document> elementos = getIncidencias().find().iterator();
@@ -177,7 +176,7 @@ public class DAOIncidencia{
 				inci.setDniUsuario(documento.get("dniUsuario").toString());
 				inci.setCategoria(documento.get("categoria").toString());
 				inci.setDescripcion(documento.get("descripcion").toString());
-				inci.setEstado("Denegada");
+				inci.setEstadoIncidencia("Denegada");
 				inci.setFechaCreacion(documento.get("fechaCreacion").toString());
 				inci.setComentarioGestor(textoGestor);
 			}
@@ -187,7 +186,7 @@ public class DAOIncidencia{
 		return inci;
 	}
 
-	public void updateIncidencia(Incidencia incidencia,String modo) throws Exception {
+	public void updateIncidencia(Modelo incidencia,String modo) throws Exception {
 		MongoCollection<Document> incidencias = getIncidencias();
 		MongoBroker broker = MongoBroker.get();
 
@@ -267,8 +266,8 @@ public class DAOIncidencia{
 		return incidenciasGestor;
 	}
 	
-	public Incidencia devolverIncidencia(ObjectId id, String categoria, String fecha, String descripcion) {
-		Incidencia inci=new Incidencia();
+	public Modelo devolverIncidencia(ObjectId id, String categoria, String fecha, String descripcion) {
+		Modelo inci=new Modelo();
 
 		Document documento = new Document();
 		MongoCursor<Document> elementos = getIncidencias().find().iterator();
@@ -281,7 +280,7 @@ public class DAOIncidencia{
 				inci.setDniUsuario(documento.get("dniUsuario").toString());
 				inci.setCategoria(categoria);
 				inci.setDescripcion(descripcion);
-				inci.setEstado("En espera");
+				inci.setEstadoIncidencia("En espera");
 				inci.setFechaCreacion(fecha);
 			}
 
@@ -289,8 +288,8 @@ public class DAOIncidencia{
 
 		return inci;
 	}
-	public Incidencia devolverIncidencia(ObjectId id) {
-		Incidencia inci=new Incidencia();
+	public Modelo devolverIncidencia(ObjectId id) {
+		Modelo inci=new Modelo();
 
 		Document documento = new Document();
 		MongoCursor<Document> elementos = getIncidencias().find().iterator();
@@ -303,7 +302,7 @@ public class DAOIncidencia{
 				inci.setDniUsuario(documento.get("dniUsuario").toString());
 				inci.setCategoria(documento.get("categoria").toString());
 				inci.setDescripcion(documento.get("descripcion").toString());
-				inci.setEstado(documento.getString("estado").toString());
+				inci.setEstadoIncidencia(documento.getString("estado").toString());
 				inci.setFechaCreacion(documento.get("fechaCreacion").toString());
 				inci.setComentarioGestor(documento.get("comentarioGestor").toString());
 			}
@@ -313,7 +312,7 @@ public class DAOIncidencia{
 		return inci;
 	}
 	
-	public void delete (Incidencia incidencia){
+	public void delete (Modelo incidencia){
 		Document bso = new Document();
 		MongoCollection<Document> incidencias = getIncidencias();
 		

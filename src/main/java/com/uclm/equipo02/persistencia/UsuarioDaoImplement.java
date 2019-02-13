@@ -14,7 +14,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.uclm.equipo02.Auxiliar.Utilidades;
-import com.uclm.equipo02.modelo.Usuario;
+import com.uclm.equipo02.modelo.Modelo;
 
 public class UsuarioDaoImplement{
 
@@ -25,7 +25,7 @@ public class UsuarioDaoImplement{
 	private final String dni = "dni";
 
 
-	public boolean login(Usuario usuario) {
+	public boolean login(Modelo usuario) {
 
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
@@ -41,7 +41,7 @@ public class UsuarioDaoImplement{
 
 
 	//Inserta un nuevo usuario en la BBDD
-	public void insert(Usuario usuario) throws Exception {
+	public void insert(Modelo usuario) throws Exception {
 		if(!selectNombre(usuario)) {
 			Document bso = new Document();
 			Document bso2 = new Document();
@@ -68,7 +68,7 @@ public class UsuarioDaoImplement{
 		return incidencias;
 	}
 	//Devuelve un true si existe y false si no existe
-	private boolean selectNombre(Usuario usuario) {
+	private boolean selectNombre(Modelo usuario) {
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
 		criterio.append(name, new BsonString(usuario.getNombre()));
@@ -80,14 +80,14 @@ public class UsuarioDaoImplement{
 		return true;
 	}
 	
-public Usuario selectNombre(String nombreParam) {
+public Modelo selectNombre(String nombreParam) {
 		
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
 		criterio.append(name, new BsonString(nombreParam));
 		FindIterable<Document> resultado=usuarios.find(criterio);
 		Document usuario = resultado.first();
-		Usuario result;
+		Modelo result;
 		if (usuario==null) {
 			return null;
 		}
@@ -98,12 +98,12 @@ public Usuario selectNombre(String nombreParam) {
 			String mailUser = usuario.getString(email);
 			String rolUser = usuario.getString(rol);
 			String dniUser = usuario.getString(dni);
-			result = new Usuario(nombreUser, pwdUser, mailUser, rolUser,dniUser);
+			result = new Modelo(nombreUser, pwdUser, mailUser, rolUser,dniUser);
 		}
 		return result;
 }
 
-	public String devolverRol(Usuario usuario) {
+	public String devolverRol(Modelo usuario) {
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
 		criterio.append(dni, new BsonString(usuario.getDni()));
@@ -118,7 +118,7 @@ public Usuario selectNombre(String nombreParam) {
 		}
 		return usuario.getRol();
 	}
-	public String devolverUser(Usuario usuario) {
+	public String devolverUser(Modelo usuario) {
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
 		criterio.append(email, new BsonString(usuario.getEmail()));
@@ -132,7 +132,7 @@ public Usuario selectNombre(String nombreParam) {
 		}
 		return usuario.getNombre();
 	}
-	public String devolverDni(Usuario usuario) {
+	public String devolverDni(Modelo usuario) {
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
 		criterio.append(email, new BsonString(usuario.getEmail()));
@@ -158,13 +158,13 @@ public Usuario selectNombre(String nombreParam) {
 
 
 	//Devuelve los usuarios que no son administradores
-	public List<Usuario> list() {
+	public List<Modelo> list() {
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		FindIterable<Document> resultado=usuarios.find();
 		String nombre;
 		Document usuario;
 		Iterator<Document> lista=resultado.iterator();
-		List<Usuario> retorno=new ArrayList<Usuario>();
+		List<Modelo> retorno=new ArrayList<Modelo>();
 		while(lista.hasNext()) {
 			usuario=lista.next();
 			nombre=usuario.getString(name);
@@ -190,7 +190,7 @@ public List<String> obtenerGestores() {
 }
 
 	//Borrar usuario
-	public void delete (Usuario usuario){
+	public void delete (Modelo usuario){
 		//List<Usuario> todos=selectAll();
 		Document bso = new Document();
 		Document bso2 = new Document();
@@ -204,23 +204,23 @@ public List<String> obtenerGestores() {
 	}
 
 	//Devuelve una lista de todos los usuarios
-	public List<Usuario> selectAll() {
+	public List<Modelo> selectAll() {
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		FindIterable<Document> resultado=usuarios.find();
 		String nombre;
 		Document usuario;
 		Iterator<Document> lista=resultado.iterator();
-		List<Usuario> retorno=new ArrayList<Usuario>();
+		List<Modelo> retorno=new ArrayList<Modelo>();
 		while(lista.hasNext()) {
 			usuario=lista.next();
 			nombre=usuario.getString(name);
-			retorno.add(new Usuario(nombre));
+			retorno.add(new Modelo(nombre));
 		}
 		return retorno;
 	}
 
 
-	public String devolverMail(Usuario usuario) {
+	public String devolverMail(Modelo usuario) {
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
 		criterio.append(dni, new BsonString(usuario.getDni()));
@@ -240,7 +240,7 @@ public List<String> obtenerGestores() {
 
 
 
-public void updatePwd(Usuario usuario) throws Exception{
+public void updatePwd(Modelo usuario) throws Exception{
 	MongoCollection<Document> usuarios = obtenerUsuarios();
 	MongoCollection<Document> contrasenas = getContrasenas();
 	Document criterio = new Document();
@@ -259,7 +259,7 @@ public void updatePwd(Usuario usuario) throws Exception{
 	usuarios.findOneAndUpdate(usuarioBso, actualizacion);
 }
 
-	public void updateRol(Usuario usuario, String rolNuevo) throws Exception{
+	public void updateRol(Modelo usuario, String rolNuevo) throws Exception{
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
 		criterio.append(dni, new BsonString(usuario.getDni()));
@@ -271,7 +271,7 @@ public void updatePwd(Usuario usuario) throws Exception{
 		Document actualizacion= new Document("$set", new Document(rol, new BsonString(rolNuevo)));
 		usuarios.findOneAndUpdate(usuarioBso, actualizacion);
 	}
-	public void updateNombre(Usuario usuario, String nombreNuevo) throws Exception{
+	public void updateNombre(Modelo usuario, String nombreNuevo) throws Exception{
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
 		criterio.append(email, new BsonString(usuario.getEmail()));
@@ -284,7 +284,7 @@ public void updatePwd(Usuario usuario) throws Exception{
 		usuarios.findOneAndUpdate(usuarioBso, actualizacion);
 		
 	}
-	public void updateEmail(Usuario usuario, String emailNuevo) throws Exception{
+	public void updateEmail(Modelo usuario, String emailNuevo) throws Exception{
 		MongoCollection<Document> usuarios = obtenerUsuarios();
 		Document criterio = new Document();
 		criterio.append(dni, new BsonString(usuario.getDni()));

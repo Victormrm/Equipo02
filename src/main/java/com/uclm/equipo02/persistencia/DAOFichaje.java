@@ -16,8 +16,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
-import com.uclm.equipo02.modelo.Fichaje;
-import com.uclm.equipo02.modelo.Usuario;
+import com.uclm.equipo02.modelo.Modelo;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -51,7 +50,7 @@ public class DAOFichaje {
 	}
 
 	
-	public ObjectId getIDFichaje(Fichaje fichaje) {
+	public ObjectId getIDFichaje(Modelo fichaje) {
 		String idfichajebd="";
 		Document documento = new Document();
 		MongoCursor<Document> elementos = getFichajes().find().iterator();
@@ -73,7 +72,7 @@ public class DAOFichaje {
 		
 	}
 
-	public ObjectId abrirFichaje(Fichaje fichaje) {
+	public ObjectId abrirFichaje(Modelo fichaje) {
 		Document documento = new Document();
 		
 
@@ -100,7 +99,7 @@ public class DAOFichaje {
 	 * y la fecha del fichaje (asumiendo que no se necesitan fichajes entre dias) y cambia el estado y la horaSalida accediendo al mongoBroker
 	 * que updatea el documento
 	 */
-	public void cerrarFichaje(Usuario usuario, Fichaje fichaje) {
+	public void cerrarFichaje(Modelo usuario, Modelo fichaje) {
 		MongoCollection<Document> fichajes = getFichajes();
 		MongoBroker broker = MongoBroker.get();
 
@@ -148,7 +147,7 @@ public class DAOFichaje {
 	 * @method Comprueba que si hay un fichaje abierto, no puedas abrir otro fichaje antes de cerrar el anterior
 	 * 
 	 */
-	public boolean validezAbierto(Fichaje fichaje) {
+	public boolean validezAbierto(Modelo fichaje) {
 		Document documento = new Document();
 		MongoCursor<Document> elementos = getFichajes().find().iterator();
 		while(elementos.hasNext()) {
@@ -169,7 +168,7 @@ public class DAOFichaje {
 	 * Tambien comprueba que se actualiza el ultimo fichaje creado
 	 */
 
-	public boolean validezCerrado(Fichaje fichaje) {
+	public boolean validezCerrado(Modelo fichaje) {
 		Document documento = new Document();
 		MongoCursor<Document> elementos = getFichajes().find().iterator();
 		while(elementos.hasNext()) {

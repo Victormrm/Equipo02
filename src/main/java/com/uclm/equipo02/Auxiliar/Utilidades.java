@@ -18,7 +18,6 @@ import org.bson.Document;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
-import com.uclm.equipo02.modelo.Usuario;
 import com.uclm.equipo02.persistencia.MongoBroker;
 
 

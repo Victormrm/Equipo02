@@ -4,7 +4,7 @@ import org.bson.Document;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.uclm.equipo02.modelo.Usuario;
+import com.uclm.equipo02.modelo.Modelo;
 
 public class DAOAdmin {
 	
@@ -18,8 +18,8 @@ public class DAOAdmin {
 
 	
 	
-	public Usuario buscarUsuarioEmail(String dni) {
-		Usuario user = new Usuario();
+	public Modelo buscarUsuarioEmail(String dni) {
+		Modelo user = new Modelo();
 		
 		Document documento = new Document();
 		MongoCursor<Document> elementos = getUsuarios().find().iterator();
