@@ -7,6 +7,8 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import org.bson.BsonString;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -15,8 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.uclm.equipo02.Auxiliar.Utilidades;
 import com.uclm.equipo02.modelo.Usuario;
-import com.uclm.equipo02.persistencia.Persistencia;
+import com.uclm.equipo02.persistencia.MongoBroker;
 
 @Controller
 
@@ -33,11 +38,7 @@ public class HomeController {
 	private final String rol = "rol";
 	private final String dni = "dni";
 	
-private final String welcome = "welcome";
-	
-	
-
-	Persistencia persis = new Persistencia();
+	private final String welcome = "welcome";
 
 
 	private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
@@ -72,15 +73,15 @@ private final String welcome = "welcome";
 		usuario.setEmail(email);
 		usuario.setPassword(password);
 		try {
-		String nombre =  persis.devolverUser(usuario);
+		String nombre =  devolverUser(usuario);
 		usuario.setNombre(nombre);
-		String dni = persis.devolverDni(usuario);
+		String dni = devolverDni(usuario);
 		usuario.setDni(dni);
 		}catch(Exception e) {
 			
 		}
-		if (persis.login(usuario) && request.getSession().getAttribute(usuario_conect) == null){
-			usuario.setRol(persis.devolverRol(usuario));
+		if (login(usuario) && request.getSession().getAttribute(usuario_conect) == null){
+			usuario.setRol(devolverRol(usuario));
 
 			if(usuario.getRol().equalsIgnoreCase("empleado")) {
 				request.getSession().setAttribute(usuario_conect, usuario);
@@ -108,11 +109,75 @@ private final String welcome = "welcome";
 		}
 		return usuario_login;
 }
+	public String devolverRol(Usuario usuario) {
+		MongoCollection<Document> usuarios = obtenerUsuarios();
+		Document criterio = new Document();
+		criterio.append(dni, new BsonString(usuario.getDni()));
+		FindIterable<Document> resultado=usuarios.find(criterio);
+		Document usuariobso = resultado.first();
+		if (usuario==null){
+			return null;
+		}else {
+			String rolUser = usuariobso.getString(rol);
+			usuario.setRol(rolUser);
+
+		}
+		return usuario.getRol();
+	}
+	public boolean login(Usuario usuario) {
+
+		MongoCollection<Document> usuarios = obtenerUsuarios();
+		Document criterio = new Document();
+		criterio.append(email, new BsonString(usuario.getEmail()));
+		criterio.append(password, new BsonString(Utilidades.encrypt(usuario.getPassword())));
+		FindIterable<Document> resultado=usuarios.find(criterio);
+		Document usuarioBson = resultado.first();
+		if (usuarioBson==null) {
+			return false;
+		}
+		return true;
+	}
+	public String devolverDni(Usuario usuario) {
+		MongoCollection<Document> usuarios = obtenerUsuarios();
+		Document criterio = new Document();
+		criterio.append(email, new BsonString(usuario.getEmail()));
+		FindIterable<Document> resultado=usuarios.find(criterio);
+		Document usuariobso = resultado.first();
+		if (usuario==null){
+			return null;
+		}else {
+			String dniUser = usuariobso.getString(dni);
+			usuario.setDni(dniUser);
+
+		}
+		return usuario.getDni();
+		
+	}
+	public String devolverUser(Usuario usuario) {
+		MongoCollection<Document> usuarios = obtenerUsuarios();
+		Document criterio = new Document();
+		criterio.append(email, new BsonString(usuario.getEmail()));
+		FindIterable<Document> resultado=usuarios.find(criterio);
+		Document usuariobso = resultado.first();
+		if (usuario==null || usuariobso ==null){
+			return null;
+		}else {
+			String nombreFinal= usuariobso.getString(name);
+			usuario.setNombre(nombreFinal);
+		}
+		return usuario.getNombre();
+	}
 
 	public ModelAndView cambiarVista(String nombreVista) {
 		ModelAndView vista = new ModelAndView(nombreVista);
 		return vista;
 	}
+	private MongoCollection<Document> obtenerUsuarios() {
+		MongoBroker broker = MongoBroker.get();
+		MongoCollection<Document> usuarios = broker.getCollection("Usuarios");
+		return usuarios;
+	}
+
 
 	@RequestMapping(value = "/logout", method = RequestMethod.GET)
 	public ModelAndView cerrarSesion(HttpServletRequest request) throws Exception {

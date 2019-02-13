@@ -2,21 +2,19 @@ package com.uclm.equipo02.modelo;
 
 import org.bson.types.ObjectId;
 
-import com.uclm.equipo02.persistencia.Persistencia;
 
 public class Incidencia {
 	@Override
 	public String toString() {
 		return "Incidencia [id= "+ _id.toString() +", nombreUsuario=" + nombreUsuario + ", dniUsuario=" + dniUsuario + ", categoria=" + categoria
 				+ ", fechaCreacion=" + fechaCreacion + ", descripcion=" + descripcion + ", estado=" + estado
-				+ ", comentarioGestor=" + comentarioGestor +  "]";
+				+ ", comentarioGestor=" + comentarioGestor + " ]";
 	}
 
 	private String nombreUsuario,dniUsuario,categoria,fechaCreacion,descripcion,estado,comentarioGestor;
 	private ObjectId _id;
 	
 
-	private Persistencia persis = new Persistencia();
 	
 	public Incidencia() {
 		
@@ -117,7 +115,5 @@ public class Incidencia {
 		this.fechaCreacion = fechaCreacion;
 	}
 
-	
-	
 
 }

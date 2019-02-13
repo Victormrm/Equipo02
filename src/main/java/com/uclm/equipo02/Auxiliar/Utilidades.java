@@ -19,7 +19,7 @@ import org.bson.Document;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.uclm.equipo02.modelo.Usuario;
-import com.uclm.equipo02.persistencia.Persistencia;
+import com.uclm.equipo02.persistencia.MongoBroker;
 
 
 
@@ -29,7 +29,7 @@ public class Utilidades {
 
 	private static String key = "InTimeQQ12345678";
 	private static String initVector = "RandomInitVector";
-	static Persistencia persis = new Persistencia();
+
 
 
 	public static String encrypt(String value) {
@@ -111,7 +111,8 @@ public class Utilidades {
 	}
 
 	public static MongoCollection<Document> getContrasenas() {
-		MongoCollection<Document> incidencias = persis.getCollection("Contrasenas");
+		MongoBroker broker = MongoBroker.get();
+		MongoCollection<Document> incidencias = broker.getCollection("Contrasenas");
 		return incidencias;
 	}
 

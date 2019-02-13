@@ -1,5 +1,6 @@
 package com.uclm.equipo02;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,7 +20,7 @@ import com.mongodb.client.*;
 import com.uclm.equipo02.mail.MailSender;
 import com.uclm.equipo02.modelo.Incidencia;
 import com.uclm.equipo02.modelo.Usuario;
-import com.uclm.equipo02.persistencia.Persistencia;
+import com.uclm.equipo02.persistencia.MongoBroker;
 
 
 @Controller
@@ -29,7 +30,6 @@ public class IncidenciaController {
 	private final String interfazAdministrador="interfazAdministrador";
 	private final String interfazGestor="interfazGestor";
 	private final String usuario_conect = "usuarioConectado";
-	Persistencia persis = new Persistencia();
 	
 	
 	@RequestMapping(value = "/crearIncidenciaGeneral", method = RequestMethod.POST)
@@ -50,7 +50,7 @@ public class IncidenciaController {
 				fechaCreacion, comentarioGestor);
 		
 		try {
-			persis.insert(incidencia);
+			insert(incidencia);
 		} catch (Exception e) {
 
 		}
@@ -63,7 +63,7 @@ public class IncidenciaController {
 				+ "                 InTime Corporation";
 		MailSender mailSender = new MailSender();
 
-		List<String> gestores = persis.obtenerGestores();
+		List<String> gestores =obtenerGestores();
 		for (String email : gestores) {
 			mailSender.enviarConGMail(email, asunto, cuerpo);
 		}
@@ -77,6 +77,47 @@ public class IncidenciaController {
 		}
 		return returned;
 	}
+	public List<String> obtenerGestores() {
+		Document documento = new Document();
+		MongoCursor<Document> elementos = obtenerUsuarios().find().iterator();
+		List<String> retorno=new ArrayList<String>();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+			if(documento.get("rol").toString().equalsIgnoreCase("Gestor de incidencias")) {
+				String mailGestor = documento.getString("email");
+				retorno.add(mailGestor);
+				
+			}
+		}
+		return retorno;
+	}
+	private MongoCollection<Document> obtenerUsuarios() {
+		MongoBroker broker = MongoBroker.get();
+		MongoCollection<Document> usuarios = broker.getCollection("Usuarios");
+		return usuarios;
+	}
+
+	public void insert(Incidencia incidencia) {
+		Document documento = new Document();
+
+		documento.append("nombreUsuario", incidencia.getNombreUsuario());
+		documento.append("dniUsuario", incidencia.getDniUsuario());
+		documento.append("categoria", incidencia.getCategoria());
+		documento.append("fechaCreacion", incidencia.getFechaCreacion());
+		documento.append("descripcion", incidencia.getDescripcion());
+		documento.append("estado", incidencia.getEstado());
+		documento.append("comentarioGestor", incidencia.getComentarioGestor());
+
+		MongoCollection<Document> incidencias = getIncidencias();
+		incidencias.insertOne(documento);
+	}
+	public static MongoCollection<Document> getIncidencias() {
+		MongoBroker broker = MongoBroker.get();
+		MongoCollection<Document> incidencias = broker.getCollection("Incidencias");
+		return incidencias;
+	}
+
+	
 
 
 	@RequestMapping(value = "seleccionarIncidencia", method = RequestMethod.GET)
@@ -89,15 +130,54 @@ public class IncidenciaController {
 		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		
 		
-		Incidencia inci = persis.buscarIncidenciaID(id);
+		Incidencia inci = buscarIncidenciaID(id);
 		model.addAttribute("seleccionadaInci", inci); 
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor =persis.getIncidenciasGestor();
+		List<Document> listaIncidenciasGestor =getIncidenciasGestor();
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 		
 		return "resolverIncidencia";
 
 	
+	}
+	public static List<Document> getIncidenciasGestor() {
+
+
+		List<Document> incidenciasGestor = new ArrayList<Document>();
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getIncidencias().find().iterator();
+
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+			if(documento.get("estado").toString().equalsIgnoreCase("En espera"))
+
+				incidenciasGestor.add(documento);
+		}
+
+		return incidenciasGestor;
+	}
+	public Incidencia buscarIncidenciaID(ObjectId id) {
+		Incidencia inci=new Incidencia();
+
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getIncidencias().find().iterator();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+
+			if(documento.get("_id").toString().equalsIgnoreCase(id.toString())) {
+				inci.set_id(id);
+				inci.setNombreUsuario(documento.get("nombreUsuario").toString());
+				inci.setDniUsuario(documento.get("dniUsuario").toString());
+				inci.setCategoria(documento.get("categoria").toString());
+				inci.setDescripcion(documento.get("descripcion").toString());
+				inci.setEstado(documento.get("estado").toString());
+				inci.setFechaCreacion(documento.get("fechaCreacion").toString());
+				inci.setComentarioGestor(documento.get("comentarioGestor").toString());
+			}
+
+		}
+
+		return inci;
 	}
 	
 	@RequestMapping(value = "resolverIncidencia", method = RequestMethod.GET)
@@ -110,16 +190,79 @@ public class IncidenciaController {
 		String idIncidencia=request.getParameter("idSeleccionada");
 		ObjectId id=new ObjectId(idIncidencia);
 		
-		Incidencia resuelta=persis.resolverIncidencia(id,texto);
+		Incidencia resuelta=resolverIncidencia(id,texto);
 		
-		persis.updateIncidencia(resuelta,modo);
+		updateIncidencia(resuelta,modo);
 		
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor = persis.getIncidenciasGestor();
+		List<Document> listaIncidenciasGestor =getIncidenciasGestor();
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 	
 		return "resolverIncidencia";
 	}
+	
+	public void updateIncidencia(Incidencia incidencia,String modo) throws Exception {
+		MongoCollection<Document> incidencias = getIncidencias();
+		MongoBroker broker = MongoBroker.get();
+
+
+		if(modo.equalsIgnoreCase("denegar") || modo.equalsIgnoreCase("resolver")) {
+
+
+			Document criteria=new Document();
+
+			criteria.put("_id", incidencia.get_id());
+
+			Document changes=new Document();
+
+			changes.put("estado", incidencia.getEstado());
+			changes.put("comentarioGestor", incidencia.getComentarioGestor());
+			Document doc = new Document();
+			doc.put("$set", changes);
+
+			broker.updateDoc(incidencias, criteria, doc);
+		}else if(modo.equalsIgnoreCase("modificar")){
+			Document criteria=new Document();
+			Document changes=new Document();
+			Document doc = new Document();
+			
+			criteria.put("_id", incidencia.get_id());
+			
+			changes.put("categoria", incidencia.getCategoria());
+			changes.put("fechaCreacion", incidencia.getFechaCreacion());
+			changes.put("descripcion", incidencia.getDescripcion());
+			
+			doc.put("$set", changes);
+			
+			broker.updateDoc(incidencias, criteria, doc);
+		}
+
+
+	}
+	public Incidencia resolverIncidencia(ObjectId id,String textoGestor) {
+		Incidencia inci=new Incidencia();
+
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getIncidencias().find().iterator();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+
+			if(documento.get("_id").toString().equalsIgnoreCase(id.toString())) {
+				inci.set_id(id);
+				inci.setNombreUsuario(documento.get("nombreUsuario").toString());
+				inci.setDniUsuario(documento.get("dniUsuario").toString());
+				inci.setCategoria(documento.get("categoria").toString());
+				inci.setDescripcion(documento.get("descripcion").toString());
+				inci.setEstado("Resuelta");
+				inci.setFechaCreacion(documento.get("fechaCreacion").toString());
+				inci.setComentarioGestor(textoGestor);
+			}
+
+		}
+
+		return inci;
+	}
+
 	
 	@RequestMapping(value = "denegarIncidencia", method = RequestMethod.GET)
 	public String denegarIncidencia(HttpServletRequest request, Model model) throws Exception {
@@ -131,14 +274,38 @@ public class IncidenciaController {
 		String idIncidencia=request.getParameter("idSeleccionada");
 		ObjectId id=new ObjectId(idIncidencia);
 		
-		Incidencia denegada=persis.denegarIncidencia(id,texto);
-		persis.updateIncidencia(denegada,modo);
+		Incidencia denegada=denegarIncidencia(id,texto);
+		updateIncidencia(denegada,modo);
 
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor =persis.getIncidenciasGestor();
+		List<Document> listaIncidenciasGestor =getIncidenciasGestor();
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 
 		return "resolverIncidencia";
+	}
+	
+	public Incidencia denegarIncidencia(ObjectId id,String textoGestor) {
+		Incidencia inci=new Incidencia();
+
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getIncidencias().find().iterator();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+
+			if(documento.get("_id").toString().equalsIgnoreCase(id.toString())) {
+				inci.set_id(id);
+				inci.setNombreUsuario(documento.get("nombreUsuario").toString());
+				inci.setDniUsuario(documento.get("dniUsuario").toString());
+				inci.setCategoria(documento.get("categoria").toString());
+				inci.setDescripcion(documento.get("descripcion").toString());
+				inci.setEstado("Denegada");
+				inci.setFechaCreacion(documento.get("fechaCreacion").toString());
+				inci.setComentarioGestor(textoGestor);
+			}
+
+		}
+
+		return inci;
 	}
 	
 	@RequestMapping(value = "listarIncidenciasGestor", method = RequestMethod.GET)
@@ -150,14 +317,30 @@ public class IncidenciaController {
 		String fecha1= request.getParameter("fecha1");
 		String fecha2= request.getParameter("fecha2");
 
-		if(!persis.existeIncidenciasEspera()) {
+		if(!existeIncidenciasEspera()) {
 			model.addAttribute("nullIncidencia","No existe ning&uacutena incidencia en estado de espera");
 			return "resolverIncidencia";
 		}else {
-			List<Document> listaIncidenciasGestor =persis.getIncidenciasGestor();
+			List<Document> listaIncidenciasGestor =getIncidenciasGestor();
 			model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 			return "resolverIncidencia";
 		}
+	}
+	public boolean existeIncidenciasEspera() {
+		boolean bool=false;
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getIncidencias().find().iterator();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+
+			if(documento.get("estado").toString().equalsIgnoreCase("En espera")) {
+				bool=true;
+
+			}
+
+		}
+		return bool;
+
 	}
 	@RequestMapping(value = "/listarIncidencias", method = RequestMethod.GET)
 	public String listarIncidencia(HttpServletRequest request, Model model) {
@@ -167,15 +350,44 @@ public class IncidenciaController {
 		request.setAttribute("dniUser", usuario.getDni());
 		String dni = usuario.getDni();
 		
-		if(!persis.existeIncidencias(dni)) {
+		if(!existeIncidencias(dni)) {
 			model.addAttribute("nullIncidencia","No existe ning&uacutena incidencia en estado de espera");
 			return "modificarIncidencia";
 		}else {
-			List<Document> listaIncidencias =persis.getIncidencias(dni);
+			List<Document> listaIncidencias =getIncidencias(dni);
 			model.addAttribute("listaIncidencias", listaIncidencias);
 			System.out.println("LISTA INCIDENCIAS"+listaIncidencias.toString());
 			return "modificarIncidencia";
 		}
+	}
+	public static List<Document> getIncidencias(String dni) {
+		List<Document> incidenciasGestor = new ArrayList<Document>();
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getIncidencias().find().iterator();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+			if(documento.get("dniUsuario").toString().equalsIgnoreCase(dni))
+
+				incidenciasGestor.add(documento);
+		}
+
+		return incidenciasGestor;
+	}
+	public boolean existeIncidencias(String dni) {
+		boolean bool=false;
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getIncidencias().find().iterator();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+
+			if(documento.get("dniUsuario").toString().equalsIgnoreCase(dni)) {
+				bool=true;
+
+			}
+
+		}
+		return bool;
+
 	}
 	@RequestMapping(value = "/listarIncidenciasEliminar", method = RequestMethod.GET)
 	public String listarIncidenciaEliminar(HttpServletRequest request, Model model) {
@@ -185,13 +397,13 @@ public class IncidenciaController {
 		request.setAttribute("dniUser", usuario.getDni());
 		String dni = usuario.getDni();
 		
-		if(!persis.existeIncidencias(dni)) {
+		if(!existeIncidencias(dni)) {
 			model.addAttribute("nullIncidencia","No existe ning&uacutena incidencia en estado de espera");
-			List<Document> listaIncidencias =persis.getIncidencias(dni);
+			List<Document> listaIncidencias =getIncidencias(dni);
 			model.addAttribute("listaIncidencias", listaIncidencias);
 			return "eliminarIncidencia";
 		}else {
-			List<Document> listaIncidencias =persis.getIncidencias(dni);
+			List<Document> listaIncidencias =getIncidencias(dni);
 			model.addAttribute("listaIncidencias", listaIncidencias);
 			System.out.println("LISTA INCIDENCIAS"+listaIncidencias.toString());
 			
@@ -208,10 +420,10 @@ public class IncidenciaController {
 		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		
 		
-		Incidencia inci = persis.buscarIncidenciaID(id);
+		Incidencia inci =buscarIncidenciaID(id);
 		model.addAttribute("seleccionadaInci", inci); 
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor =persis.getIncidencias(usuario.getDni());
+		List<Document> listaIncidenciasGestor =getIncidencias(usuario.getDni());
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 		
 		return "modificarIncidencia";	
@@ -226,10 +438,10 @@ public class IncidenciaController {
 		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		
 		
-		Incidencia inci = persis.buscarIncidenciaID(id);
+		Incidencia inci = buscarIncidenciaID(id);
 		model.addAttribute("seleccionadaInci", inci); 
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor =persis.getIncidencias(usuario.getDni());
+		List<Document> listaIncidenciasGestor =getIncidencias(usuario.getDni());
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 		
 		return "eliminarIncidencia";	
@@ -252,13 +464,13 @@ public class IncidenciaController {
 		String idIncidencia=request.getParameter("idSeleccionada");
 		ObjectId id=new ObjectId(idIncidencia);
 		
-		Incidencia incidencia= persis.devolverIncidencia(id, categoria,fecha,descripcion);
+		Incidencia incidencia= devolverIncidencia(id, categoria,fecha,descripcion);
 		try {
-			persis.updateIncidencia(incidencia,modo);
+			updateIncidencia(incidencia,modo);
 		}catch(Exception e) {
 			
 		}
-		List<Document> listaIncidencias =persis.getIncidencias(usuario.getDni());
+		List<Document> listaIncidencias =getIncidencias(usuario.getDni());
 		model.addAttribute("listaIncidencias", listaIncidencias);
 		
 		if(usuario.getRol().equalsIgnoreCase("Empleado")) {
@@ -272,6 +484,28 @@ public class IncidenciaController {
 		
 		return returned;	
 	}
+	public Incidencia devolverIncidencia(ObjectId id, String categoria, String fecha, String descripcion) {
+		Incidencia inci=new Incidencia();
+
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getIncidencias().find().iterator();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+
+			if(documento.get("_id").toString().equalsIgnoreCase(id.toString())) {
+				inci.set_id(id);
+				inci.setNombreUsuario(documento.get("nombreUsuario").toString());
+				inci.setDniUsuario(documento.get("dniUsuario").toString());
+				inci.setCategoria(categoria);
+				inci.setDescripcion(descripcion);
+				inci.setEstado("En espera");
+				inci.setFechaCreacion(fecha);
+			}
+
+		}
+
+		return inci;
+	}
 	@RequestMapping(value = "eliminarIncidenciaUser", method = RequestMethod.GET)
 	public String eliminarIncidencia(HttpServletRequest request, Model model) {
 		String returned="";
@@ -281,9 +515,9 @@ public class IncidenciaController {
 		ObjectId id=new ObjectId(idIncidencia);
 		
 		System.out.println("id object id " + id);
-		Incidencia incidencia= persis.devolverIncidencia(id);
+		Incidencia incidencia= devolverIncidencia(id);
 		try {
-			persis.delete(incidencia);
+			delete(incidencia);
 		}catch(Exception e) {
 			
 		}
@@ -297,7 +531,35 @@ public class IncidenciaController {
 		}
 		return returned;
 	}
-	
+	public void delete (Incidencia incidencia){
+		Document bso = new Document();
+		MongoCollection<Document> incidencias = getIncidencias();
+		
+		incidencias.deleteOne(new Document("_id", new ObjectId(incidencia.get_id().toString())));
+	}
+	public Incidencia devolverIncidencia(ObjectId id) {
+		Incidencia inci=new Incidencia();
+
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getIncidencias().find().iterator();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+
+			if(documento.get("_id").toString().equalsIgnoreCase(id.toString())) {
+				inci.set_id(id);
+				inci.setNombreUsuario(documento.get("nombreUsuario").toString());
+				inci.setDniUsuario(documento.get("dniUsuario").toString());
+				inci.setCategoria(documento.get("categoria").toString());
+				inci.setDescripcion(documento.get("descripcion").toString());
+				inci.setEstado(documento.getString("estado").toString());
+				inci.setFechaCreacion(documento.get("fechaCreacion").toString());
+				inci.setComentarioGestor(documento.get("comentarioGestor").toString());
+			}
+
+		}
+
+		return inci;
+	}
 	
 	@RequestMapping(value = "/REEliminarIncidencia", method = RequestMethod.GET)
 	public ModelAndView REEliminarIncidencia() {

@@ -2,8 +2,6 @@ package com.uclm.equipo02.modelo;
 
 import org.bson.types.ObjectId;
 
-
-import com.uclm.equipo02.persistencia.Persistencia;
 public class Fichaje {
 	
 	private String fechaFichaje, horaEntrada, horaSalida, dniEmpleado;
@@ -11,7 +9,6 @@ public class Fichaje {
 
 	private boolean estado; //true=abierto false=cerrado
 
-	Persistencia persis=new Persistencia();
 	
 
 

@@ -1,10 +1,13 @@
 package com.uclm.equipo02.modelo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.bson.Document;
 
-import com.uclm.equipo02.persistencia.Persistencia;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.uclm.equipo02.persistencia.MongoBroker;
 
 public class Usuario {
 	private String nombre;
@@ -12,7 +15,6 @@ public class Usuario {
 	private String email;
 	private String rol;
 	private String dni;
-	private Persistencia persis = new Persistencia();
 
 	public Usuario(String nombre, String password, String email, String rol,String dni) {
 		super();
@@ -24,8 +26,26 @@ public class Usuario {
 	}
 	
 	public List<Document> getFichajesEmpleado(String nombreEmpleado){
-		return persis.fichajesEmpleado(nombreEmpleado);
+		return fichajesEmpleado(nombreEmpleado);
 }
+	public static MongoCollection<Document> getFichajes() {
+		MongoBroker broker = MongoBroker.get();
+		MongoCollection<Document> fichajes = broker.getCollection("Fichajes");
+		return fichajes;
+	}
+	public List<Document> fichajesEmpleado(String dniEmpleado){
+		List<Document> fichajesempleado = new ArrayList<Document>();
+		Document documento = new Document();
+		MongoCursor<Document> elementos = getFichajes().find().iterator();
+		while(elementos.hasNext()) {
+			documento = elementos.next();
+			if(documento.get("dniEmpleado").toString().equalsIgnoreCase(dniEmpleado))
+				fichajesempleado.add(documento);
+		}
+
+		return fichajesempleado;
+	}
+
 	
 	public Usuario(String nombre) {
 		this.nombre=nombre;
@@ -62,7 +82,7 @@ public class Usuario {
 	}
 	@Override
 	public String toString() {
-		return "Usuario [nombre=" + nombre + ", password=" + password +"dni = "+dni +", email=" + email + ", rol=" + rol +   "]";
+		return "Usuario [nombre=" + nombre + ", password=" + password +"dni = "+dni +", email=" + email + ", rol=" + rol + "]";
 	}
 
 	public void setDni(String dni) {
