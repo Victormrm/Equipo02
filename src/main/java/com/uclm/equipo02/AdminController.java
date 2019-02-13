@@ -13,20 +13,19 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.uclm.equipo02.Auxiliar.Utilidades;
 import com.uclm.equipo02.mail.MailSender;
-import com.uclm.equipo02.modelo.Modelo;
-import com.uclm.equipo02.persistencia.UsuarioDaoImplement;
-import com.uclm.equipo02.persistencia.DAOAdmin;
+import com.uclm.equipo02.modelo.Usuario;
+import com.uclm.equipo02.persistencia.Persistencia;
 
 
 @Controller
 public class AdminController {
 	//private final String usuario_login = "login";
-	UsuarioDaoImplement userDao = new UsuarioDaoImplement();
-	Modelo user = new Modelo();
+	Persistencia userDao = new Persistencia();
+	Usuario user = new Usuario();
 	private final String alert = "alerta";
 	private final String usuario_conect = "usuarioConectado";
 	private final String adminUpdatePwd = "adminUpdatePwd";
-	private DAOAdmin daoadmin=new DAOAdmin();
+	private Persistencia persis=new Persistencia();
 
 	//private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
@@ -43,7 +42,7 @@ public class AdminController {
 			return "interfazCrearUsuario";
 		}
 		//UsuarioDaoImplement userDao = new UsuarioDaoImplement();
-		Modelo user = new Modelo();
+		Usuario user = new Usuario();
 		user.setNombre(nombre);
 		user.setPassword(Utilidades.encrypt(pass));
 		user.setEmail(mail);
@@ -77,7 +76,7 @@ public class AdminController {
 			model.addAttribute(alert, "Por favor rellene los campos");
 			return "interfazEliminarUsuario";
 		}else {
-			Modelo user = new Modelo();
+			Usuario user = new Usuario();
 			user.setDni(dni);
 			try {
 				user.setEmail(userDao.devolverMail(user));
@@ -96,7 +95,7 @@ public class AdminController {
 
 		String dni = request.getParameter("txtDniBusqueda");
 		
-		if(!daoadmin.existeUser(dni)) {
+		if(!persis.existeUser(dni)) {
 			model.addAttribute("alertaUsuarioNull","El usuario buscado no existe");
 			return "modificarUsuario";
 		}else {
@@ -143,7 +142,7 @@ public class AdminController {
 	
 	@RequestMapping(value = "/adminModificarPwd", method = RequestMethod.POST)
 	public String adminModificarPwd(HttpServletRequest request, Model model) throws Exception {
-		Modelo usuarioLigero = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuarioLigero = (Usuario) request.getSession().getAttribute(usuario_conect);
 		
 		String dniUsuario = request.getParameter("dniUsuario");
 		
@@ -152,22 +151,22 @@ public class AdminController {
 		String pwdNueva2 = request.getParameter("contrasenaNueva2");
 		
 		
-		Modelo usuarioBusqueda= new Modelo();
+		Usuario usuarioBusqueda= new Usuario();
 		
 		
 		
-		if(!daoadmin.existeUser(dniUsuario)) {
+		if(!persis.existeUser(dniUsuario)) {
 			model.addAttribute("alertaUsuarioNull","El usuario buscado no existe");
 			return adminUpdatePwd;
 			
 		}else {
 		
-		usuarioBusqueda = daoadmin.buscarUsuarioEmail(dniUsuario);
+		usuarioBusqueda = persis.buscarUsuarioEmail(dniUsuario);
 		
 		
 		String nombre = userDao.devolverUser(usuarioBusqueda);
 
-		Modelo usuario = userDao.selectNombre(nombre);
+		Usuario usuario = userDao.selectNombre(nombre);
 		String actualPwd = usuario.getPassword();
 		String dni = usuario.getDni();
 		usuario.setEmail(usuarioBusqueda.getEmail());

@@ -11,8 +11,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 
 import com.uclm.equipo02.Auxiliar.Utilidades;
-import com.uclm.equipo02.modelo.Modelo;
-import com.uclm.equipo02.persistencia.UsuarioDaoImplement;
+import com.uclm.equipo02.modelo.Usuario;
+import com.uclm.equipo02.persistencia.Persistencia;
 
 @Controller
 public class UsuarioController {
@@ -20,25 +20,25 @@ public class UsuarioController {
 	private final String gestionPwd = "gestionPwd";
 	private final String usuario_conect = "usuarioConectado";
 
-	UsuarioDaoImplement userDao = new UsuarioDaoImplement();
+	Persistencia persis = new Persistencia();
 
 	@RequestMapping(value = "/modificarPwd", method = RequestMethod.POST)
 	public String modificarPwd(HttpServletRequest request, Model model) throws Exception {
-		Modelo usuarioLigero = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuarioLigero = (Usuario) request.getSession().getAttribute(usuario_conect);
 		String emailActual = usuarioLigero.getEmail();
 		
 		String pwdActual = request.getParameter("contrasenaActual");
 		String pwdNueva = request.getParameter("contrasenaNueva");
 		String pwdNueva2 = request.getParameter("contrasenaNueva2");
-		String nombre = userDao.devolverUser(usuarioLigero);
+		String nombre = persis.devolverUser(usuarioLigero);
 	
-		Modelo usuario = userDao.selectNombre(nombre);
+		Usuario usuario = persis.selectNombre(nombre);
 		usuario.setEmail(emailActual);
 		usuario.setPassword(pwdActual);
 		
 		
 		
-		if(!userDao.login(usuario)) {
+		if(!persis.login(usuario)) {
 			request.setAttribute("nombreUser", usuario.getNombre());
 			request.setAttribute("mailUser", usuario.getEmail());
 			model.addAttribute(alert, "Password actual incorrecta");
@@ -73,7 +73,7 @@ public class UsuarioController {
 			return gestionPwd;
 		}else {
 			usuario.setPassword(pwdNueva);
-			userDao.updatePwd(usuario);
+			persis.updatePwd(usuario);
 			HttpSession session = request.getSession();
 			request.setAttribute("nombreUser", usuario.getNombre());
 			request.setAttribute("mailUser", usuario.getEmail());
@@ -87,7 +87,7 @@ public class UsuarioController {
 	@RequestMapping(value = "/REfichajesUser", method = RequestMethod.GET)
 	public ModelAndView REfichajesUser(HttpServletRequest request,Model model) {
 		String returned="";
-		Modelo usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		if(usuario.getRol().equalsIgnoreCase("Empleado")) {
 			returned="fichajes";
 		}else if(usuario.getRol().equalsIgnoreCase("administrador")){

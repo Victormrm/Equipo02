@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.uclm.equipo02.modelo.Modelo;
-import com.uclm.equipo02.persistencia.UsuarioDaoImplement;
+import com.uclm.equipo02.modelo.Usuario;
+import com.uclm.equipo02.persistencia.Persistencia;
 
 @Controller
 
@@ -37,7 +37,7 @@ private final String welcome = "welcome";
 	
 	
 
-	UsuarioDaoImplement userDao = new UsuarioDaoImplement();
+	Persistencia persis = new Persistencia();
 
 
 	private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
@@ -68,19 +68,19 @@ private final String welcome = "welcome";
 			model.addAttribute(alert, "Por favor rellene los campos");
 			return usuario_login;
 		}
-		Modelo usuario = new Modelo();
+		Usuario usuario = new Usuario();
 		usuario.setEmail(email);
 		usuario.setPassword(password);
 		try {
-		String nombre =  userDao.devolverUser(usuario);
+		String nombre =  persis.devolverUser(usuario);
 		usuario.setNombre(nombre);
-		String dni = userDao.devolverDni(usuario);
+		String dni = persis.devolverDni(usuario);
 		usuario.setDni(dni);
 		}catch(Exception e) {
 			
 		}
-		if (userDao.login(usuario) && request.getSession().getAttribute(usuario_conect) == null){
-			usuario.setRol(userDao.devolverRol(usuario));
+		if (persis.login(usuario) && request.getSession().getAttribute(usuario_conect) == null){
+			usuario.setRol(persis.devolverRol(usuario));
 
 			if(usuario.getRol().equalsIgnoreCase("empleado")) {
 				request.getSession().setAttribute(usuario_conect, usuario);

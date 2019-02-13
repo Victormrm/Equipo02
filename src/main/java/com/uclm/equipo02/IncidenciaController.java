@@ -17,10 +17,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.mongodb.client.*;
 import com.uclm.equipo02.mail.MailSender;
-import com.uclm.equipo02.modelo.Modelo;
-import com.uclm.equipo02.persistencia.DAOFichaje;
-import com.uclm.equipo02.persistencia.DAOIncidencia;
-import com.uclm.equipo02.persistencia.UsuarioDaoImplement;
+import com.uclm.equipo02.modelo.Incidencia;
+import com.uclm.equipo02.modelo.Usuario;
+import com.uclm.equipo02.persistencia.Persistencia;
 
 
 @Controller
@@ -30,15 +29,14 @@ public class IncidenciaController {
 	private final String interfazAdministrador="interfazAdministrador";
 	private final String interfazGestor="interfazGestor";
 	private final String usuario_conect = "usuarioConectado";
-	DAOIncidencia incidenciaDao = new DAOIncidencia();
-	UsuarioDaoImplement userDao = new UsuarioDaoImplement();
+	Persistencia persis = new Persistencia();
 	
 	
 	@RequestMapping(value = "/crearIncidenciaGeneral", method = RequestMethod.POST)
 	public String crearIncidenciaGeneral(HttpServletRequest request, Model model) throws Exception {
 		String returned="";
-		Modelo usuario;
-	    usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+	    usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 	   
 		String nombreUsuario = usuario.getNombre();
 		String dniUsuario = usuario.getDni();
@@ -48,11 +46,11 @@ public class IncidenciaController {
 		String estado = "En espera";
 		String comentarioGestor = "";
 		
-		Modelo incidencia = new Modelo(nombreUsuario, dniUsuario, categoria, descripcion, estado, 
+		Incidencia incidencia = new Incidencia(nombreUsuario, dniUsuario, categoria, descripcion, estado, 
 				fechaCreacion, comentarioGestor);
 		
 		try {
-			incidenciaDao.insert(incidencia);
+			persis.insert(incidencia);
 		} catch (Exception e) {
 
 		}
@@ -65,7 +63,7 @@ public class IncidenciaController {
 				+ "                 InTime Corporation";
 		MailSender mailSender = new MailSender();
 
-		List<String> gestores = userDao.obtenerGestores();
+		List<String> gestores = persis.obtenerGestores();
 		for (String email : gestores) {
 			mailSender.enviarConGMail(email, asunto, cuerpo);
 		}
@@ -87,14 +85,14 @@ public class IncidenciaController {
 		String idIncidencia=request.getParameter("idI");
 		ObjectId id=new ObjectId(idIncidencia);
 		
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		
 		
-		Modelo inci = incidenciaDao.buscarIncidenciaID(id);
+		Incidencia inci = persis.buscarIncidenciaID(id);
 		model.addAttribute("seleccionadaInci", inci); 
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor =incidenciaDao.getIncidenciasGestor();
+		List<Document> listaIncidenciasGestor =persis.getIncidenciasGestor();
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 		
 		return "resolverIncidencia";
@@ -104,20 +102,20 @@ public class IncidenciaController {
 	
 	@RequestMapping(value = "resolverIncidencia", method = RequestMethod.GET)
 	public String resolverIncidencia(HttpServletRequest request, Model model) throws Exception {
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		String texto=request.getParameter("textoGestor");
 		String modo="resolver";
 		
 		String idIncidencia=request.getParameter("idSeleccionada");
 		ObjectId id=new ObjectId(idIncidencia);
 		
-		Modelo resuelta=incidenciaDao.resolverIncidencia(id,texto);
+		Incidencia resuelta=persis.resolverIncidencia(id,texto);
 		
-		incidenciaDao.updateIncidencia(resuelta,modo);
+		persis.updateIncidencia(resuelta,modo);
 		
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor =incidenciaDao.getIncidenciasGestor();
+		List<Document> listaIncidenciasGestor = persis.getIncidenciasGestor();
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 	
 		return "resolverIncidencia";
@@ -125,19 +123,19 @@ public class IncidenciaController {
 	
 	@RequestMapping(value = "denegarIncidencia", method = RequestMethod.GET)
 	public String denegarIncidencia(HttpServletRequest request, Model model) throws Exception {
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		String texto=request.getParameter("textoGestor");
 		String modo="denegar";
 		
 		String idIncidencia=request.getParameter("idSeleccionada");
 		ObjectId id=new ObjectId(idIncidencia);
 		
-		Modelo denegada=incidenciaDao.denegarIncidencia(id,texto);
-		incidenciaDao.updateIncidencia(denegada,modo);
+		Incidencia denegada=persis.denegarIncidencia(id,texto);
+		persis.updateIncidencia(denegada,modo);
 
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor =incidenciaDao.getIncidenciasGestor();
+		List<Document> listaIncidenciasGestor =persis.getIncidenciasGestor();
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 
 		return "resolverIncidencia";
@@ -145,35 +143,35 @@ public class IncidenciaController {
 	
 	@RequestMapping(value = "listarIncidenciasGestor", method = RequestMethod.GET)
 	public String listarIncidenciasGestor(HttpServletRequest request, Model model) {
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 
 		String dni = usuario.getDni();
 		String fecha1= request.getParameter("fecha1");
 		String fecha2= request.getParameter("fecha2");
 
-		if(!incidenciaDao.existeIncidenciasEspera()) {
+		if(!persis.existeIncidenciasEspera()) {
 			model.addAttribute("nullIncidencia","No existe ning&uacutena incidencia en estado de espera");
 			return "resolverIncidencia";
 		}else {
-			List<Document> listaIncidenciasGestor =incidenciaDao.getIncidenciasGestor();
+			List<Document> listaIncidenciasGestor =persis.getIncidenciasGestor();
 			model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 			return "resolverIncidencia";
 		}
 	}
 	@RequestMapping(value = "/listarIncidencias", method = RequestMethod.GET)
 	public String listarIncidencia(HttpServletRequest request, Model model) {
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		request.setAttribute("nombreUser", usuario.getNombre());
 		request.setAttribute("dniUser", usuario.getDni());
 		String dni = usuario.getDni();
 		
-		if(!incidenciaDao.existeIncidencias(dni)) {
+		if(!persis.existeIncidencias(dni)) {
 			model.addAttribute("nullIncidencia","No existe ning&uacutena incidencia en estado de espera");
 			return "modificarIncidencia";
 		}else {
-			List<Document> listaIncidencias =incidenciaDao.getIncidencias(dni);
+			List<Document> listaIncidencias =persis.getIncidencias(dni);
 			model.addAttribute("listaIncidencias", listaIncidencias);
 			System.out.println("LISTA INCIDENCIAS"+listaIncidencias.toString());
 			return "modificarIncidencia";
@@ -181,19 +179,19 @@ public class IncidenciaController {
 	}
 	@RequestMapping(value = "/listarIncidenciasEliminar", method = RequestMethod.GET)
 	public String listarIncidenciaEliminar(HttpServletRequest request, Model model) {
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		request.setAttribute("nombreUser", usuario.getNombre());
 		request.setAttribute("dniUser", usuario.getDni());
 		String dni = usuario.getDni();
 		
-		if(!incidenciaDao.existeIncidencias(dni)) {
+		if(!persis.existeIncidencias(dni)) {
 			model.addAttribute("nullIncidencia","No existe ning&uacutena incidencia en estado de espera");
-			List<Document> listaIncidencias =incidenciaDao.getIncidencias(dni);
+			List<Document> listaIncidencias =persis.getIncidencias(dni);
 			model.addAttribute("listaIncidencias", listaIncidencias);
 			return "eliminarIncidencia";
 		}else {
-			List<Document> listaIncidencias =incidenciaDao.getIncidencias(dni);
+			List<Document> listaIncidencias =persis.getIncidencias(dni);
 			model.addAttribute("listaIncidencias", listaIncidencias);
 			System.out.println("LISTA INCIDENCIAS"+listaIncidencias.toString());
 			
@@ -206,14 +204,14 @@ public class IncidenciaController {
 		String idIncidencia=request.getParameter("idI");
 		ObjectId id=new ObjectId(idIncidencia);
 		
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		
 		
-		Modelo inci = incidenciaDao.buscarIncidenciaID(id);
+		Incidencia inci = persis.buscarIncidenciaID(id);
 		model.addAttribute("seleccionadaInci", inci); 
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor =incidenciaDao.getIncidencias(usuario.getDni());
+		List<Document> listaIncidenciasGestor =persis.getIncidencias(usuario.getDni());
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 		
 		return "modificarIncidencia";	
@@ -224,14 +222,14 @@ public class IncidenciaController {
 		String idIncidencia=request.getParameter("idI");
 		ObjectId id=new ObjectId(idIncidencia);
 		
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		
 		
-		Modelo inci = incidenciaDao.buscarIncidenciaID(id);
+		Incidencia inci = persis.buscarIncidenciaID(id);
 		model.addAttribute("seleccionadaInci", inci); 
 		//Creacion de lista de incidencias de nuevo
-		List<Document> listaIncidenciasGestor =incidenciaDao.getIncidencias(usuario.getDni());
+		List<Document> listaIncidenciasGestor =persis.getIncidencias(usuario.getDni());
 		model.addAttribute("listaIncidencias", listaIncidenciasGestor);
 		
 		return "eliminarIncidencia";	
@@ -240,8 +238,8 @@ public class IncidenciaController {
 	public String modificarIncidencia(HttpServletRequest request, Model model) {
 		String modo="modificar";
 		String returned="";
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		String categoria = request.getParameter("listaTiposIncidencia");
 		String fecha = request.getParameter("txtFecha");
 		String descripcion = request.getParameter("textoIncidencia");
@@ -254,13 +252,13 @@ public class IncidenciaController {
 		String idIncidencia=request.getParameter("idSeleccionada");
 		ObjectId id=new ObjectId(idIncidencia);
 		
-		Modelo incidencia= incidenciaDao.devolverIncidencia(id, categoria,fecha,descripcion);
+		Incidencia incidencia= persis.devolverIncidencia(id, categoria,fecha,descripcion);
 		try {
-			incidenciaDao.updateIncidencia(incidencia,modo);
+			persis.updateIncidencia(incidencia,modo);
 		}catch(Exception e) {
 			
 		}
-		List<Document> listaIncidencias =incidenciaDao.getIncidencias(usuario.getDni());
+		List<Document> listaIncidencias =persis.getIncidencias(usuario.getDni());
 		model.addAttribute("listaIncidencias", listaIncidencias);
 		
 		if(usuario.getRol().equalsIgnoreCase("Empleado")) {
@@ -277,15 +275,15 @@ public class IncidenciaController {
 	@RequestMapping(value = "eliminarIncidenciaUser", method = RequestMethod.GET)
 	public String eliminarIncidencia(HttpServletRequest request, Model model) {
 		String returned="";
-		Modelo usuario;
-		usuario = (Modelo) request.getSession().getAttribute(usuario_conect);
+		Usuario usuario;
+		usuario = (Usuario) request.getSession().getAttribute(usuario_conect);
 		String idIncidencia=request.getParameter("idSeleccionada");
 		ObjectId id=new ObjectId(idIncidencia);
 		
 		System.out.println("id object id " + id);
-		Modelo incidencia= incidenciaDao.devolverIncidencia(id);
+		Incidencia incidencia= persis.devolverIncidencia(id);
 		try {
-			incidenciaDao.delete(incidencia);
+			persis.delete(incidencia);
 		}catch(Exception e) {
 			
 		}
