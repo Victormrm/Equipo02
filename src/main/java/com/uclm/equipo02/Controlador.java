@@ -494,7 +494,7 @@ public class Controlador {
 					request.setAttribute("nombreUser", usuario.getNombre());
 					request.setAttribute("mailUser", email);
 					request.setAttribute("dniUser", dni);
-					return "interfazAdministradorFichaje";
+					return interfazAdministrador;
 				}else if (usuario.getRol().equalsIgnoreCase("Gestor de incidencias")){
 					request.getSession().setAttribute(usuario_conectHome, usuario);
 					request.setAttribute("nombreUser", usuario.getNombre());
