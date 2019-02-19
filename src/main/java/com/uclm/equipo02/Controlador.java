@@ -895,7 +895,7 @@ public class Controlador {
 			if(usuario.getRol().equalsIgnoreCase("Empleado")) {
 				returned="fichajes";
 			}else if(usuario.getRol().equalsIgnoreCase("administrador")){
-				returned="interfazAdministrador";
+				returned=interfazAdministrador;
 
 			}else if(usuario.getRol().equalsIgnoreCase("Gestor de incidencias")){
 				returned="interfazGestor";
