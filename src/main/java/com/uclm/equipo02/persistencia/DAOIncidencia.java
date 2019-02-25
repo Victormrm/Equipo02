@@ -302,7 +302,7 @@ public class DAOIncidencia{
 				inci.setDniUsuario(documento.get("dniUsuario").toString());
 				inci.setCategoria(documento.get("categoria").toString());
 				inci.setDescripcion(documento.get("descripcion").toString());
-				inci.setEstadoIncidencia(documento.getString("estado").toString());
+				inci.setEstadoIncidencia(documento.get("estado").toString());
 				inci.setFechaCreacion(documento.get("fechaCreacion").toString());
 				inci.setComentarioGestor(documento.get("comentarioGestor").toString());
 			}
