@@ -127,7 +127,7 @@ public class AdminController {
 	public String modificarUser(HttpServletRequest request, Model model) throws Exception {
 
 		String rol = request.getParameter("listaRoles");
-		String email = request.getParameter("txtEmail");
+		String email = request.getParameter("txtUsuarioEmail");
 		try {
 			
 			userDao.updateEmail(user, email);
